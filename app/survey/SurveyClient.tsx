@@ -1,5 +1,28 @@
 'use client'
-import { useState, useRef } from 'react'
+// ─── SESSION SAVE / RESTORE ────────────────────────────────────────────────
+import { useState, useRef, useEffect } from 'react'
+
+const SESSION_KEY = 'osl_pulse_survey_session'
+const STEP_KEY    = 'osl_pulse_survey_step'
+
+function saveSession(s: unknown, step: number) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); localStorage.setItem(STEP_KEY, String(step)) } catch {}
+}
+
+function loadSession(): { data: Record<string,unknown>; step: number } | null {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY)
+    const step = localStorage.getItem(STEP_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (!data?.fullName?.trim()) return null
+    return { data, step: step ? parseInt(step, 10) : 0 }
+  } catch { return null }
+}
+
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); localStorage.removeItem(STEP_KEY) } catch {}
+}
 
 interface S {
   fullName: string; email: string; unit: string; dutyStation: string; countryOffice: string
@@ -78,7 +101,7 @@ const card: React.CSSProperties = {
   boxShadow: '0 2px 14px rgba(0,90,156,0.09)', overflow: 'hidden',
 }
 
-function NavBar() {
+function NavBar({ hasSaved = false }: { hasSaved?: boolean }) {
   return (
     <nav style={{ background: BLUE, borderBottom: `3px solid ${BLUE_MID}` }}>
       <div style={{ maxWidth: 840, margin: '0 auto', padding: '0 20px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -89,9 +112,14 @@ function NavBar() {
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 1, fontFamily: 'monospace' }}>OSL/OPS — System Mapping Survey</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div className="live-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80' }} />
-          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, fontFamily: 'monospace', letterSpacing: 1 }}>FORM-OSL-SYS-001 · 2026</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {hasSaved && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80' }} />
+              <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, fontFamily: 'monospace', letterSpacing: 0.8 }}>AUTO-SAVED</span>
+            </div>
+          )}
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, fontFamily: 'monospace', letterSpacing: 1 }}>FORM-OSL-SYS-001 · 2026</span>
         </div>
       </div>
     </nav>
@@ -344,7 +372,29 @@ export default function SurveyClient() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [err, setErr] = useState('')
+  const [savedSession, setSavedSession] = useState<{ data: Record<string,unknown>; step: number } | null>(null)
+  const [showRestore, setShowRestore] = useState(false)
   const topRef = useRef<HTMLDivElement>(null)
+
+  // Check for saved session on mount
+  useEffect(() => {
+    const session = loadSession()
+    if (session) { setSavedSession(session); setShowRestore(true) }
+  }, [])
+
+  // Auto-save every change — silently, always
+  useEffect(() => {
+    if (submitted) { clearSession(); return }
+    if (s.fullName.trim()) saveSession(s, step)
+  }, [s, step, submitted])
+
+  const restoreSession = () => {
+    if (!savedSession) return
+    setS({ ...INIT, ...(savedSession.data as Partial<S>) })
+    setStep(savedSession.step)
+    setShowRestore(false)
+  }
+  const dismissRestore = () => { clearSession(); setShowRestore(false) }
 
   const upd = (k: keyof S, v: unknown) => setS(p => ({ ...p, [k]: v }))
   const tog = (k: keyof S, v: string) => setS(p => {
@@ -383,7 +433,7 @@ export default function SurveyClient() {
         body: JSON.stringify(s),
       })
       if (!r.ok) throw new Error('Failed')
-      setSubmitted(true); scroll()
+      clearSession(); setSubmitted(true); scroll()
     } catch { setErr('Submission failed — please try again or email akanimo@who.int') }
     finally { setSubmitting(false) }
   }
@@ -397,6 +447,40 @@ export default function SurveyClient() {
   return (
     <div style={{ minHeight: '100vh', background: '#EEF6FC' }}>
       <div ref={topRef} />
+
+      {/* ── SESSION RESTORE BANNER ─────────────────────────────── */}
+      {showRestore && savedSession && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 999, maxWidth: 560, width: 'calc(100% - 32px)',
+          background: '#1A2B3C', borderRadius: 6, boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+          border: '2px solid #009ADE', padding: '16px 20px',
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' as const,
+        }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ color: '#009ADE', fontSize: 11, fontFamily: 'monospace', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+              💾 Unsaved session found
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, lineHeight: 1.5 }}>
+              You were on <strong style={{ color: 'white' }}>Step {savedSession.step + 1}</strong> as <strong style={{ color: 'white' }}>{String(savedSession.data.fullName || 'Unknown')}</strong>. Pick up where you left off?
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button onClick={dismissRestore} style={{
+              padding: '8px 16px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent',
+              color: 'rgba(255,255,255,0.55)', borderRadius: 3, fontFamily: 'monospace', fontSize: 10,
+              fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, cursor: 'pointer',
+            }}>Discard</button>
+            <button onClick={restoreSession} style={{
+              padding: '8px 20px', background: '#009ADE', color: 'white', border: 'none',
+              borderRadius: 3, fontFamily: 'monospace', fontSize: 11, fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: 0.8, cursor: 'pointer',
+              boxShadow: '0 2px 10px rgba(0,154,222,0.4)',
+            }}>↩ Resume</button>
+          </div>
+        </div>
+      )}
+
       <NavBar />
 
       {/* ── HERO (step 0 only) ─────────────────────────────────── */}
