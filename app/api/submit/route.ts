@@ -8,7 +8,7 @@ async function sendAlert(data: Record<string, unknown>) {
   const name      = data.fullName   || 'Unknown'
   const email     = data.email      || '—'
   const unit      = data.unit       || '—'
-  const station   = data.dutyStation === 'Country Office (specify below)'
+  const station   = data.dutyStation === 'Nairobi Hub (specify below)'
                       ? data.countryOffice
                       : data.dutyStation || '—'
   const kpis      = (data.kpisSelected as string[] || []).slice(0, 5).join(', ') || '—'
