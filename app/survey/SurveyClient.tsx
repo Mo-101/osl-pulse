@@ -106,7 +106,7 @@ function NavBar({ hasSaved = false }: { hasSaved?: boolean }) {
     <nav style={{ background: BLUE, borderBottom: `3px solid ${BLUE_MID}` }}>
       <div style={{ maxWidth: 840, margin: '0 auto', padding: '0 20px', height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 34, height: 34, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: WHITE, fontSize: 9, fontWeight: 700, letterSpacing: 1 }}>WHO</div>
+          <img src="/who-afro-logo.png" alt="WHO AFRO" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
           <div>
             <div style={{ color: WHITE, fontWeight: 700, fontSize: 13 }}>WHO AFRO · Emergencies Programme</div>
             <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, letterSpacing: 1, fontFamily: 'monospace' }}>OSL/OPS — System Mapping Survey</div>
@@ -487,9 +487,12 @@ export default function SurveyClient() {
       {step === 0 && (
         <div style={{ background: `linear-gradient(135deg, ${BLUE} 0%, #0072BB 100%)`, padding: '36px 20px 44px' }}>
           <div style={{ maxWidth: 840, margin: '0 auto' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 20, padding: '4px 14px', marginBottom: 16 }}>
-              <div className="live-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80' }} />
-              <span style={{ color: WHITE, fontSize: 10, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 1 }}>OSL PULSE · BUILD PHASE · ACTIVE</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 24, padding: '6px 16px 6px 6px', marginBottom: 16 }}>
+              <img src="/who-afro-logo.png" alt="WHO AFRO" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="live-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', flexShrink: 0 }} />
+                <span style={{ color: WHITE, fontSize: 10, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 1 }}>OSL PULSE · BUILD PHASE · ACTIVE</span>
+              </div>
             </div>
             <h1 style={{ fontFamily: "'Source Serif 4', serif", fontSize: 'clamp(24px,4vw,36px)', color: WHITE, lineHeight: 1.15, marginBottom: 16 }}>
               OSL PULSE<br />
